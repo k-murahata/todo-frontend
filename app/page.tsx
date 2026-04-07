@@ -6,7 +6,7 @@ import TodoInput from "@/components/TodoInput";
 import TodoItem from "@/components/TodoItem";
 import TodoFilter from "@/components/TodoFilter";
 
-const API_URL = "https://todo-app-bylm.onrender.com/api/todos";
+const API_URL = "https://todo-bachend.onrender.com/api/todos";
 
 export default function Home() {
   const [todos, setTodos] = useState<Todo[]>([]);
