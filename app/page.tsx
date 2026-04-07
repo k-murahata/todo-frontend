@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { Todo, Filter } from "@/types/todo";
+import { Todo, Filter, Priority } from "@/types/todo";
 import TodoInput from "@/components/TodoInput";
 import TodoItem from "@/components/TodoItem";
 import TodoFilter from "@/components/TodoFilter";
@@ -25,11 +25,11 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleAdd = useCallback(async (title: string) => {
+  const handleAdd = useCallback(async (title: string, priority: Priority) => {
     const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, completed: false }),
+      body: JSON.stringify({ title, completed: false, priority }),
     });
     if (!res.ok) return;
     const created: Todo = await res.json();
@@ -104,7 +104,7 @@ export default function Home() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <TodoInput onAdd={handleAdd} />
+        <TodoInput onAdd={(title, priority) => handleAdd(title, priority)} />
 
         <TodoFilter current={filter} onChange={setFilter} counts={counts} />
 

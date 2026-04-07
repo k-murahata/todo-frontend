@@ -10,6 +10,12 @@ interface TodoItemProps {
   onEdit: (id: number, title: string) => void;
 }
 
+const priorityConfig = {
+  high: { label: "高", className: "bg-red-100 text-red-700 border-red-200" },
+  medium: { label: "中", className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+  low: { label: "低", className: "bg-green-100 text-green-700 border-green-200" },
+};
+
 export default function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(todo.title);
@@ -29,6 +35,8 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemP
     }
   };
 
+  const { label, className: priorityClass } = priorityConfig[todo.priority ?? "medium"];
+
   return (
     <li className={`flex items-center gap-3 p-4 bg-white rounded-lg border transition-opacity ${todo.completed ? "opacity-60" : ""}`}>
       <input
@@ -37,6 +45,10 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemP
         onChange={() => onToggle(todo.id)}
         className="w-5 h-5 rounded accent-blue-600 cursor-pointer flex-shrink-0"
       />
+
+      <span className={`text-xs px-2 py-0.5 rounded border font-medium flex-shrink-0 ${priorityClass}`}>
+        {label}
+      </span>
 
       {isEditing ? (
         <form onSubmit={handleEditSubmit} className="flex-1 flex gap-2">
