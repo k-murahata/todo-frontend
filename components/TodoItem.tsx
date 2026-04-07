@@ -5,22 +5,16 @@ import { Todo } from "@/types/todo";
 
 interface TodoItemProps {
   todo: Todo;
-  onToggle: (id: string) => void;
-  onDelete: (id: string) => void;
-  onEdit: (id: string, text: string) => void;
+  onToggle: (id: number) => void;
+  onDelete: (id: number) => void;
+  onEdit: (id: number, title: string) => void;
 }
-
-const priorityConfig = {
-  high: { label: "高", className: "bg-red-100 text-red-700 border-red-200" },
-  medium: { label: "中", className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
-  low: { label: "低", className: "bg-green-100 text-green-700 border-green-200" },
-};
 
 export default function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(todo.text);
+  const [editText, setEditText] = useState(todo.title);
 
-  const handleEditSubmit = (e: React.FormEvent) => {
+  const handleEditSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     const trimmed = editText.trim();
     if (!trimmed) return;
@@ -30,12 +24,10 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemP
 
   const handleEditKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
-      setEditText(todo.text);
+      setEditText(todo.title);
       setIsEditing(false);
     }
   };
-
-  const { label, className: priorityClass } = priorityConfig[todo.priority];
 
   return (
     <li className={`flex items-center gap-3 p-4 bg-white rounded-lg border transition-opacity ${todo.completed ? "opacity-60" : ""}`}>
@@ -45,10 +37,6 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemP
         onChange={() => onToggle(todo.id)}
         className="w-5 h-5 rounded accent-blue-600 cursor-pointer flex-shrink-0"
       />
-
-      <span className={`text-xs px-2 py-0.5 rounded border font-medium flex-shrink-0 ${priorityClass}`}>
-        {label}
-      </span>
 
       {isEditing ? (
         <form onSubmit={handleEditSubmit} className="flex-1 flex gap-2">
@@ -65,7 +53,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemP
           </button>
           <button
             type="button"
-            onClick={() => { setEditText(todo.text); setIsEditing(false); }}
+            onClick={() => { setEditText(todo.title); setIsEditing(false); }}
             className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300"
           >
             キャンセル
@@ -77,7 +65,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemP
           onDoubleClick={() => !todo.completed && setIsEditing(true)}
           title={todo.completed ? "" : "ダブルクリックで編集"}
         >
-          {todo.text}
+          {todo.title}
         </span>
       )}
 

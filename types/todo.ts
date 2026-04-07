@@ -1,11 +1,8 @@
-export type Priority = "low" | "medium" | "high";
-
 export interface Todo {
-  id: string;
-  text: string;
+  id: number;
+  title: string;
+  description?: string;
   completed: boolean;
-  priority: Priority;
-  createdAt: Date;
 }
 
 export type Filter = "all" | "active" | "completed";

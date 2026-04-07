@@ -1,71 +1,80 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
-import { Todo, Filter, Priority } from "@/types/todo";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { Todo, Filter } from "@/types/todo";
 import TodoInput from "@/components/TodoInput";
 import TodoItem from "@/components/TodoItem";
 import TodoFilter from "@/components/TodoFilter";
 
-const INITIAL_TODOS: Todo[] = [
-  {
-    id: "1",
-    text: "Next.js の公式ドキュメントを読む",
-    completed: false,
-    priority: "high",
-    createdAt: new Date(),
-  },
-  {
-    id: "2",
-    text: "Tailwind CSS を使いこなす",
-    completed: false,
-    priority: "medium",
-    createdAt: new Date(),
-  },
-  {
-    id: "3",
-    text: "TypeScript の型定義を学ぶ",
-    completed: true,
-    priority: "low",
-    createdAt: new Date(),
-  },
-];
+const API_URL = "https://todo-app-bylm.onrender.com/api/todos";
 
 export default function Home() {
-  const [todos, setTodos] = useState<Todo[]>(INITIAL_TODOS);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleAdd = useCallback((text: string, priority: Priority) => {
-    const newTodo: Todo = {
-      id: crypto.randomUUID(),
-      text,
-      completed: false,
-      priority,
-      createdAt: new Date(),
-    };
-    setTodos((prev) => [newTodo, ...prev]);
+  useEffect(() => {
+    fetch(API_URL)
+      .then((res) => {
+        if (!res.ok) throw new Error("取得に失敗しました");
+        return res.json();
+      })
+      .then((data: Todo[]) => setTodos(data))
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
   }, []);
 
-  const handleToggle = useCallback((id: string) => {
-    setTodos((prev) =>
-      prev.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
+  const handleAdd = useCallback(async (title: string) => {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, completed: false }),
+    });
+    if (!res.ok) return;
+    const created: Todo = await res.json();
+    setTodos((prev) => [created, ...prev]);
+  }, []);
+
+  const handleToggle = useCallback(async (id: number) => {
+    const todo = todos.find((t) => t.id === id);
+    if (!todo) return;
+    const res = await fetch(`${API_URL}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...todo, completed: !todo.completed }),
+    });
+    if (!res.ok) return;
+    const updated: Todo = await res.json();
+    setTodos((prev) => prev.map((t) => (t.id === id ? updated : t)));
+  }, [todos]);
+
+  const handleDelete = useCallback(async (id: number) => {
+    const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+    if (!res.ok) return;
+    setTodos((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const handleEdit = useCallback(async (id: number, title: string) => {
+    const todo = todos.find((t) => t.id === id);
+    if (!todo) return;
+    const res = await fetch(`${API_URL}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...todo, title }),
+    });
+    if (!res.ok) return;
+    const updated: Todo = await res.json();
+    setTodos((prev) => prev.map((t) => (t.id === id ? updated : t)));
+  }, [todos]);
+
+  const handleClearCompleted = useCallback(async () => {
+    const completed = todos.filter((t) => t.completed);
+    await Promise.all(
+      completed.map((t) => fetch(`${API_URL}/${t.id}`, { method: "DELETE" }))
     );
-  }, []);
-
-  const handleDelete = useCallback((id: string) => {
-    setTodos((prev) => prev.filter((todo) => todo.id !== id));
-  }, []);
-
-  const handleEdit = useCallback((id: string, text: string) => {
-    setTodos((prev) =>
-      prev.map((todo) => (todo.id === id ? { ...todo, text } : todo))
-    );
-  }, []);
-
-  const handleClearCompleted = useCallback(() => {
-    setTodos((prev) => prev.filter((todo) => !todo.completed));
-  }, []);
+    setTodos((prev) => prev.filter((t) => !t.completed));
+  }, [todos]);
 
   const filteredTodos = useMemo(() => {
     switch (filter) {
@@ -99,7 +108,11 @@ export default function Home() {
 
         <TodoFilter current={filter} onChange={setFilter} counts={counts} />
 
-        {filteredTodos.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-12 text-gray-400 text-sm">読み込み中...</div>
+        ) : error ? (
+          <div className="text-center py-12 text-red-500 text-sm">{error}</div>
+        ) : filteredTodos.length === 0 ? (
           <div className="text-center py-12 text-gray-400">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 mx-auto mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -120,7 +133,7 @@ export default function Home() {
           </ul>
         )}
 
-        {counts.completed > 0 && (
+        {counts.completed > 0 && !loading && (
           <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center text-sm text-gray-500">
             <span>{counts.active} 件の未完了タスク</span>
             <button
